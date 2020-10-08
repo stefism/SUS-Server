@@ -13,7 +13,7 @@ namespace SUS.MvcFramework
             string csharpCode = GenerateCSharpFromTemplate(templateCode);
             IView executableObject = GenerateExecutableCode(csharpCode);
             string html = executableObject.ExecuteTemplate(viewModel);
-            return html;
+            return html; 
         }
 
         private string GenerateCSharpFromTemplate(string templateCode)
