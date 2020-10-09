@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace SUS.MvcFramework
 {
@@ -15,15 +16,31 @@ namespace SUS.MvcFramework
     {
         public string GetHtml(string templateCode, object viewModel)
         {
-            string csharpCode = GenerateCSharpFromTemplate(templateCode);
-            IView executableObject = GenerateExecutableCode(csharpCode, viewModel);
+            string csharpCode = GenerateCSharpFromTemplate
+                (templateCode, viewModel);
+            IView executableObject = GenerateExecutableCode
+                (csharpCode, viewModel);
             string html = executableObject.ExecuteTemplate(viewModel);
             return html;
         }
 
-        private string GenerateCSharpFromTemplate(string templateCode)
+        private string GenerateCSharpFromTemplate
+            (string templateCode, object viewModel)
         {
-            //string methodBody = GetMethodBody(templateCode);
+            string typeOfModel = "object";
+
+            if (viewModel != null)
+            {
+                if (viewModel.GetType().IsGenericType)
+                {
+
+                }
+                else
+                {
+                    typeOfModel = viewModel.GetType().FullName;
+                }
+            }            
+
             string scharpCode = @"
 using System;
 using System.Text;
@@ -37,6 +54,7 @@ namespace ViewNamespace
     {
         public string ExecuteTemplate(object viewModel)
         {
+            var Model = viewModel as " + typeOfModel + @";
             var html = new StringBuilder();
             
             " + GetMethodBody(templateCode) + @"
@@ -51,14 +69,50 @@ namespace ViewNamespace
 
         private string GetMethodBody(string templateCode)
         {
+            Regex csharpCodeRegex = new Regex(@"[^\""\s&\'\<]+"); //Maybe ! need to insert in regex?
+
+            var supportedOperators = new List<string>
+            {
+                "for", "while", "if", "else",  "foreach"
+            };
+
             StringBuilder csharpCode = new StringBuilder();
             StringReader sr = new StringReader(templateCode);
-            
+
             string line;
 
             while ((line = sr.ReadLine()) != null)
             {
-                csharpCode .AppendLine($"html.AppendLine(@\"{line.Replace("\"", "\"\"")}\");");
+                if (supportedOperators.Any(x =>
+                line.TrimStart().StartsWith("@" + x)))
+                {
+                    int atSignLocation = line.IndexOf("@");
+                    line = line.Remove(atSignLocation, 1);
+                    csharpCode.AppendLine(line);
+                }
+                else if (line.TrimStart()
+                    .StartsWith("{") || line.TrimStart().StartsWith("}"))
+                {
+                    csharpCode.AppendLine(line);
+                }
+                else
+                {
+                    csharpCode.Append($"html.AppendLine(@\"");
+
+                    while (line.Contains("@"))
+                    {
+                        int atSignLocation = line.IndexOf("@");
+                        string htmlBeforeSign = line.Substring(0, atSignLocation);
+                        csharpCode
+                            .Append(htmlBeforeSign.Replace("\"", "\"\"") + "\" + ");
+                        string lineAfterSign = line.Substring(atSignLocation + 1);
+                        string code = csharpCodeRegex.Match(lineAfterSign).Value;
+                        csharpCode.Append(code + " + @\"");
+                        line = lineAfterSign.Substring(code.Length);
+                    }                    
+
+                    csharpCode.AppendLine(line.Replace("\"", "\"\"") + "\");");
+                }
             }
 
             return csharpCode.ToString();
@@ -91,8 +145,8 @@ namespace ViewNamespace
             compileResult = compileResult
                 .AddSyntaxTrees(SyntaxFactory.ParseSyntaxTree(csharpCode));
 
-            using(MemoryStream memoryStream = new MemoryStream())
-            {               
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
                 EmitResult result = compileResult.Emit(memoryStream);
 
                 if (!result.Success)
@@ -112,14 +166,16 @@ namespace ViewNamespace
                     Assembly assembly = Assembly.Load(byteAssembly);
                     Type viewType = assembly.GetType("ViewNamespace.ViewClass");
                     object instance = Activator.CreateInstance(viewType);
-                    return instance as IView;
+                    return (instance as IView)
+                        ?? new ErrorView(new List<string> { "Instance is null!" }, csharpCode);
+                    //If instance is null (not valid) - return error message.
                 }
                 catch (Exception ex)
                 {
-                    return new ErrorView(new List<string> 
+                    return new ErrorView(new List<string>
                     { ex.ToString()}, csharpCode);
-                }               
-            }           
+                }
+            }
         }
     }
 }
