@@ -7,18 +7,30 @@ namespace SUS.MvcFramework
     public abstract class Controller
     //Абстрактните класове не могат да се инстанцират но могат да се наследяват.
     {
+        private SusViewEngine viewEngine;
+
+        public Controller()
+        {
+            viewEngine = new SusViewEngine();
+        }
+
         public HttpResponse View
-            ([CallerMemberName]string viewPath = null)
+            (object viewModel = null, 
+            [CallerMemberName]string viewPath = null)
         {
             var layout = System.IO.File.ReadAllText("Views/Shared/_Layout.cshtml");
+            layout = layout.Replace("@RenderBody()", "__VIEW__");
+            layout = viewEngine.GetHtml(layout, viewModel);
 
             string viewContent = System.IO.File
                 .ReadAllText("Views/" + 
                 GetType().Name.Replace("Controller", string.Empty) 
                 + "/" + viewPath + ".cshtml");
+            
+            viewContent = viewEngine.GetHtml(viewContent, viewModel);
 
             var responseHtml = layout
-                .Replace("@RenderBody()", viewContent);
+                .Replace("__VIEW__", viewContent);
 
             byte[] responseBodyBytes = Encoding.UTF8.GetBytes(responseHtml);
 

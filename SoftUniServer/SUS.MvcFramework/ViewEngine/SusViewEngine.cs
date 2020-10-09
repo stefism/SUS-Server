@@ -33,7 +33,14 @@ namespace SUS.MvcFramework
             {
                 if (viewModel.GetType().IsGenericType)
                 {
+                    string modelName = viewModel.GetType().FullName;
 
+                    Type[] genericArguments = viewModel
+                        .GetType().GenericTypeArguments;
+
+                    typeOfModel = modelName
+                        .Substring(0, modelName.IndexOf('`'))
+                        + "<" + string.Join(",", genericArguments.Select(x => x.FullName)) + ">";
                 }
                 else
                 {
