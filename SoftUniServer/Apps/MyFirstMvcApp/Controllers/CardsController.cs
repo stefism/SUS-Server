@@ -1,5 +1,6 @@
 ﻿using BattleCards.Data;
 using BattleCards.ViewModels;
+using Newtonsoft.Json.Serialization;
 using SUS.HTTP;
 using SUS.MvcFramework;
 using System.Linq;
@@ -16,8 +17,12 @@ namespace BattleCards.Controllers
         [HttpPost("/Cards/Add")]
         public HttpResponse DoAdd()
         {
-            //var request = Request;
             var dbContext = new ApplicationDbContext();
+
+            if (Request.FormData["name"].Length < 5)
+            {
+                return Error("Name should be at least 5 character long.");
+            }
 
             dbContext.Cards.Add(new Card
             {
@@ -48,8 +53,8 @@ namespace BattleCards.Controllers
                     Description = db.Description
                 }).ToList();
 
-            return View(new AllCardsViewModel 
-            { 
+            return View(new AllCardsViewModel
+            {
                 Cards = cardsViewModel
             });
         }

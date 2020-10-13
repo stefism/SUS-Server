@@ -15,11 +15,16 @@ namespace BattleCards.Controllers
             var viewModel = new IndexViewModel();
             viewModel.CurrentYear = DateTime.UtcNow.Year;
             viewModel.Message = "Welcome to Battle Cards";
+            if (Request.Session.ContainsKey("about"))
+            {
+                viewModel.Message += " (You have been on about page.)";
+            }
             return View(viewModel);
         }
 
         public HttpResponse About()
         {
+            Request.Session["about"] = "yes";
             return View();
         }
     }

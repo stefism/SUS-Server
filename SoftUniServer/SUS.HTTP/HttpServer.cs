@@ -83,18 +83,19 @@ namespace SUS.HTTP
                     else
                     {
                         response = new HttpResponse("text/html", new byte[0], HttpStatusCode.NotFound);
-                    }
-
-                    response.Cookies
-                        .Add(new ResponceCookie("sid", Guid.NewGuid()
-                        .ToString())
-                        {
-                            HttpOnly = true,
-                            MaxAge = 60 * 24 * 60 * 60
-                        });
+                    }                  
 
                     response.Headers
                         .Add(new Header("Server", "SUS Server 1.0"));
+                    
+                    var sessionCookie = request.Cookies
+                        .FirstOrDefault(x => x.Name == HttpConstants.SessionCookieName);
+                    if (sessionCookie != null)
+                    {
+                        var responseSessionCookie = new ResponceCookie(sessionCookie.Name, sessionCookie.Value);
+                        responseSessionCookie.Path = "/";
+                        response.Cookies.Add(responseSessionCookie);
+                    }
 
                     var responseHeaderBytes = Encoding.UTF8.GetBytes(response.ToString());
 
