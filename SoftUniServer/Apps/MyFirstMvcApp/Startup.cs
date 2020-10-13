@@ -1,10 +1,10 @@
-﻿using MyFirstMvcApp.Controllers;
+﻿using BattleCards.Data;
+using Microsoft.EntityFrameworkCore;
 using SUS.HTTP;
 using SUS.MvcFramework;
-using System;
 using System.Collections.Generic;
 
-namespace MyFirstMvcApp
+namespace BattleCards
 {
     public class Startup : IMvcApplication
     {
@@ -14,8 +14,8 @@ namespace MyFirstMvcApp
         }
 
         public void Configure(List<Route> routeTable)
-        {            
-                      
+        {
+            new ApplicationDbContext().Database.Migrate();
         }
     }
 }

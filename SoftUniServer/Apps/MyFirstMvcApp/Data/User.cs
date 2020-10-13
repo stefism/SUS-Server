@@ -10,6 +10,7 @@ namespace BattleCards.Data
         public User()
         {
             Id = Guid.NewGuid().ToString();
+            Cards = new HashSet<UserCard>();
         }
 
         public string Id { get; set; }

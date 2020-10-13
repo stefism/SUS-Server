@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MyFirstMvcApp.ViewModels
+namespace BattleCards.ViewModels
 {
     public class IndexViewModel
     {
