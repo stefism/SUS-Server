@@ -50,15 +50,15 @@ namespace SUS.MvcFramework
 
                 foreach (var method in methods)
                 {
-                    var url = "/" + controllerType.Name.Replace("Controller", string.Empty) + "/" + method.Name;
+                    string url = "/" + controllerType.Name.Replace("Controller", string.Empty) + "/" + method.Name;
 
-                    var attribute 
+                    BaseHttpAttribute attribute 
                         = method.GetCustomAttributes(false)
                         .Where(x => x.GetType()
                         .IsSubclassOf(typeof(BaseHttpAttribute)))
                         .FirstOrDefault() as BaseHttpAttribute;
 
-                    var httpMethod = HttpMethod.Get;
+                    HttpMethod httpMethod = HttpMethod.Get;
 
                     if (attribute != null)
                     {
@@ -72,9 +72,12 @@ namespace SUS.MvcFramework
 
                     routeTable.Add(new Route(url, httpMethod, (request) =>
                     {
-                        var instance = Activator.CreateInstance(controllerType);
-                        var response = method.Invoke(instance, new[] { request })
-                        as HttpResponse;
+                        Controller instance = Activator
+                        .CreateInstance(controllerType) as Controller;
+                        instance.Request = request;
+
+                        HttpResponse response = method
+                        .Invoke(instance, new object[] {  }) as HttpResponse;
                         return response;
                     }));
 
@@ -89,7 +92,7 @@ namespace SUS.MvcFramework
 
             foreach (var staticFile in staticFiles)
             {
-                var url = staticFile.Replace("wwwroot", string.Empty)
+                string url = staticFile.Replace("wwwroot", string.Empty)
                     .Replace("\\", "/");
 
                 routeTable.Add(new Route(url, HttpMethod.Get, (request) =>

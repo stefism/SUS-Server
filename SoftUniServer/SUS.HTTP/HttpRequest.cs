@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 
 namespace SUS.HTTP
@@ -11,6 +12,7 @@ namespace SUS.HTTP
         {
             Headers = new List<Header>();
             Cookies = new List<Cookie>();
+            FormData = new Dictionary<string, string>();
 
             string[] lines = requestString.Split(new string[] { HttpConstants.NewLine }, StringSplitOptions.None);
 
@@ -19,7 +21,7 @@ namespace SUS.HTTP
 
             Method = (HttpMethod)Enum
                 .Parse(typeof(HttpMethod), headerLineParts[0], true);
-            
+
             Path = headerLineParts[1];
 
             int lineIndex = 1;
@@ -44,7 +46,7 @@ namespace SUS.HTTP
                 else
                 {
                     bodyBuilder.AppendLine(line);
-                }                           
+                }
             }
 
             if (Headers.Any(x => x.Name == HttpConstants.RequestCookieHeader))
@@ -63,6 +65,19 @@ namespace SUS.HTTP
             }
 
             Body = bodyBuilder.ToString();
+            var parameters = Body.Split(new char[] { '&' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var parameter in parameters)
+            {
+                var parameterParts = parameter.Split('=');
+                var name = parameterParts[0];
+                var value = WebUtility.UrlDecode(parameterParts[1]);
+
+                if (!FormData.ContainsKey(name))
+                {
+                    FormData.Add(name, value);
+                }
+            }
         }
 
         public string Path { get; set; }
@@ -72,6 +87,8 @@ namespace SUS.HTTP
         public ICollection<Header> Headers { get; set; }
 
         public ICollection<Cookie> Cookies { get; set; }
+
+        public IDictionary<string, string> FormData { get; set; }
 
         public string Body { get; set; }
     }
