@@ -53,10 +53,7 @@ namespace BattleCards.Controllers
                     Description = db.Description
                 }).ToList();
 
-            return View(new AllCardsViewModel
-            {
-                Cards = cardsViewModel
-            });
+            return View(cardsViewModel);
         }
 
         public HttpResponse Collection()
