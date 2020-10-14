@@ -7,6 +7,7 @@ namespace SUS.MvcFramework
     public abstract class Controller
     //Абстрактните класове не могат да се инстанцират но могат да се наследяват.
     {
+        private const string UserIdSessionName = "UserId";
         private SusViewEngine viewEngine;
 
         public Controller()
@@ -16,7 +17,7 @@ namespace SUS.MvcFramework
 
         public HttpRequest Request { get; set; }
 
-        public HttpResponse View
+        protected HttpResponse View
             (object viewModel = null, 
             [CallerMemberName]string viewPath = null)
         {            
@@ -24,7 +25,7 @@ namespace SUS.MvcFramework
                 .ReadAllText("Views/" + 
                 GetType().Name.Replace("Controller", string.Empty) 
                 + "/" + viewPath + ".cshtml");           
-            viewContent = viewEngine.GetHtml(viewContent, viewModel);
+            viewContent = viewEngine.GetHtml(viewContent, viewModel, GetUserId());
 
             var responseHtml = PutViewInLayout(viewContent, viewModel);
 
@@ -35,7 +36,7 @@ namespace SUS.MvcFramework
             return response;
         }      
 
-        public HttpResponse File(string filePath, string contentType)
+        protected HttpResponse File(string filePath, string contentType)
         {
             byte[] fileBytes = System.IO.File.ReadAllBytes(filePath);
 
@@ -44,7 +45,7 @@ namespace SUS.MvcFramework
             return responce;
         }
 
-        public HttpResponse Redirect(string url)
+        protected HttpResponse Redirect(string url)
         {
             var response = new HttpResponse(HttpStatusCode.Found);
             //HttpStatusCode.Found = 302. 
@@ -56,7 +57,7 @@ namespace SUS.MvcFramework
             return response;
         }
 
-        public HttpResponse Error(string errorText)
+        protected HttpResponse Error(string errorText)
         {
             var viewContent = $"<div class=\"alert alert-danger\" role=\"alert\">{errorText}</div>";          
             var responseHtml = PutViewInLayout(viewContent);
@@ -64,12 +65,32 @@ namespace SUS.MvcFramework
             var response = new HttpResponse("text/html", responseBodyBytes, HttpStatusCode.ServerError);
             return response;
         }
+        //In abstract classes, protected methods is recomended.
+
+        protected void SignIn(string userId)
+        {
+            Request.Session[UserIdSessionName] = userId;
+        }
+
+        protected void SignOut()
+        {
+            Request.Session[UserIdSessionName] = null; //Delete UserId from Session.
+        }
+
+        protected bool IsUserSignedIn() =>
+            Request.Session.ContainsKey(UserIdSessionName) &&
+            Request.Session[UserIdSessionName] != null;
+
+        protected string GetUserId() =>
+            Request.Session.ContainsKey(UserIdSessionName) 
+            ? Request.Session[UserIdSessionName] 
+            : null;
 
         private string PutViewInLayout(string viewContent, object viewModel = null)
         {
             var layout = System.IO.File.ReadAllText("Views/Shared/_Layout.cshtml");
             layout = layout.Replace("@RenderBody()", "__VIEW__");
-            layout = viewEngine.GetHtml(layout, viewModel);
+            layout = viewEngine.GetHtml(layout, viewModel, GetUserId());
             var responseHtml = layout.Replace("__VIEW__", viewContent);
             return responseHtml;
         }
