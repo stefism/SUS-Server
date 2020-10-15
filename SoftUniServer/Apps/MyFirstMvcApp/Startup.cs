@@ -1,4 +1,5 @@
 ﻿using BattleCards.Data;
+using BattleCards.Services;
 using Microsoft.EntityFrameworkCore;
 using SUS.HTTP;
 using SUS.MvcFramework;
@@ -8,9 +9,10 @@ namespace BattleCards
 {
     public class Startup : IMvcApplication
     {
-        public void ConfigureServices()
+        public void ConfigureServices(IServiceCollection serviceCollection)
         {
-
+            serviceCollection.Add<IUserService, UserService>();
+            serviceCollection.Add<ICardService, CardService>();
         }
 
         public void Configure(List<Route> routeTable)

@@ -9,22 +9,38 @@ namespace BattleCards.Controllers
 {
     public class CardsController : Controller
     {
+        private ApplicationDbContext db;
+
+        public CardsController(ApplicationDbContext db)
+        {
+            this.db = db;
+        }
         public HttpResponse Add()
         {
+            if (!IsUserSignedIn())
+            {
+                return Redirect("/Users/Login");
+            }
+
             return View();
         }
 
         [HttpPost("/Cards/Add")]
         public HttpResponse DoAdd()
         {
-            var dbContext = new ApplicationDbContext();
+            if (!IsUserSignedIn())
+            {
+                return Redirect("/Users/Login");
+            }
+
+            //var dbContext = new ApplicationDbContext(); The dependency inversion principle is not observed! All we need, must be filled in the constructor!
 
             if (Request.FormData["name"].Length < 5)
             {
                 return Error("Name should be at least 5 character long.");
             }
 
-            dbContext.Cards.Add(new Card
+            db.Cards.Add(new Card
             {
                 Attack = int.Parse(Request.FormData["attack"]),
                 Health = int.Parse(Request.FormData["health"]),
@@ -34,14 +50,20 @@ namespace BattleCards.Controllers
                 Keyword = Request.FormData["keyword"],
             });
 
-            dbContext.SaveChanges();
+            db.SaveChanges();
 
-            return Redirect("/");
+            return Redirect("/Cards/All");
         }
 
         public HttpResponse All()
         {
-            var db = new ApplicationDbContext();
+            if (!IsUserSignedIn())
+            {
+                return Redirect("/Users/Login");
+            }
+
+            //var db = new ApplicationDbContext(); The dependency inversion principle is not observed! All we need, must be filled in the constructor!
+
             var cardsViewModel = db.Cards
                 .Select(db => new CardViewModel
                 {
@@ -58,6 +80,11 @@ namespace BattleCards.Controllers
 
         public HttpResponse Collection()
         {
+            if (!IsUserSignedIn())
+            {
+                return Redirect("/Users/Login");
+            }
+
             return View();
         }
     }

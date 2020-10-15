@@ -16,10 +16,10 @@ namespace BattleCards.Controllers
             return View();
         }
 
-        public HttpResponse About()
-        {
-            SignIn("Stefan");
-            return View();
-        }
+        //public HttpResponse About()
+        //{
+        //    SignIn("Stefan");
+        //    return View();
+        //}
     }
 }

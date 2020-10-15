@@ -8,21 +8,31 @@ namespace BattleCards.Controllers
 {
     public class UsersController : Controller
     {
-        private UserService userService;
+        private readonly IUserService userService;
 
-        public UsersController()
+        public UsersController(IUserService userService)
         {
-            userService = new UserService();
+            this.userService = userService;
         }
 
         public HttpResponse Login()
         {
+            if (IsUserSignedIn())
+            {
+                return Redirect("/");
+            }
+
             return View();
         }
 
         [HttpPost("/Users/Login")]
         public HttpResponse DoLogin()
         {
+            if (IsUserSignedIn())
+            {
+                return Redirect("/");
+            }
+
             var username = Request.FormData["username"];
             var password = Request.FormData["password"];
             var userId = userService.GetUserId(username, password);
@@ -33,17 +43,27 @@ namespace BattleCards.Controllers
             }
 
             SignIn(userId);
-            return Redirect("/");
+            return Redirect("/Cards/All");
         }
 
         public HttpResponse Register()
         {
+            if (IsUserSignedIn())
+            {
+                return Redirect("/");
+            }
+
             return View();
         }
 
         [HttpPost("/Users/Register")]
         public HttpResponse DoRegister()
         {
+            if (IsUserSignedIn())
+            {
+                return Redirect("/");
+            }
+
             var username = Request.FormData["username"];
             var email = Request.FormData["email"];
             var password = Request.FormData["password"];
@@ -55,7 +75,7 @@ namespace BattleCards.Controllers
                 return Error("Username must be between 5 and 20 characters.");
             }
 
-            if (!Regex.IsMatch(username, @"[a-zA-Z0-9\.]+"))
+            if (!Regex.IsMatch(username, @"^[a-zA-Z0-9\.]+$"))
             {
                 return Error("Username contain invalid character.");
             }

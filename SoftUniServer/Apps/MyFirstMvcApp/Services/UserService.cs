@@ -11,9 +11,9 @@ namespace BattleCards.Services
     {
         private readonly ApplicationDbContext db; //readonly -> set only in constructor.
 
-        public UserService()
+        public UserService(ApplicationDbContext db)
         {
-            db = new ApplicationDbContext();
+            this.db = db;
         }
 
         public string CreateUser(string username, string email, string password)
@@ -46,7 +46,12 @@ namespace BattleCards.Services
         {
             User user = db.Users.FirstOrDefault(u => u.Username == username);
 
-            return user?.Id;
+            if (user?.Password != ComputeHash(password))
+            {
+                return null;
+            }
+
+            return user.Id;
         }
 
         private static string ComputeHash(string input)
