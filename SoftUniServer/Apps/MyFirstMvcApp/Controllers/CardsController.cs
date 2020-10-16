@@ -1,19 +1,21 @@
 ﻿using BattleCards.Data;
+using BattleCards.Services;
 using BattleCards.ViewModels;
-using Newtonsoft.Json.Serialization;
 using SUS.HTTP;
 using SUS.MvcFramework;
+using System;
 using System.Linq;
 
 namespace BattleCards.Controllers
 {
     public class CardsController : Controller
-    {
-        private ApplicationDbContext db;
+    {       
+        private readonly ICardService cardService;
 
-        public CardsController(ApplicationDbContext db)
+        public CardsController(ICardService cardService)
         {
-            this.db = db;
+            
+            this.cardService = cardService;
         }
         public HttpResponse Add()
         {
@@ -25,8 +27,8 @@ namespace BattleCards.Controllers
             return View();
         }
 
-        [HttpPost("/Cards/Add")]
-        public HttpResponse DoAdd(AddCardInputModel model)
+        [HttpPost]
+        public HttpResponse Add(AddCardInputModel model)
         {
             if (!IsUserSignedIn())
             {
@@ -35,23 +37,47 @@ namespace BattleCards.Controllers
 
             //var dbContext = new ApplicationDbContext(); The dependency inversion principle is not observed! All we need, must be filled in the constructor!
 
-            if (Request.FormData["name"].Length < 5)
+            if (string.IsNullOrEmpty(model.Name) || model.Name.Length < 5 || model.Name.Length > 15)
             {
-                return Error("Name should be at least 5 character long.");
+                return Error("Name should be between 5 and 15 character long.");
             }
 
-            db.Cards.Add(new Card
+            if (string.IsNullOrWhiteSpace(model.Image))
             {
-                Attack = model.Attack,
-                Health = model.Health,
-                Description = model.Description,
-                Name = model.Name,
-                ImageUrl = model.Image,
-                Keyword = model.Keyword,
-            });
+                return Error("The image is required.");
+            }
 
-            db.SaveChanges();
+            if (!Uri.TryCreate(model.Image, UriKind.Absolute, out _))
+            {
+                return Error("Image url is not valid.");
+            }
 
+            if (string.IsNullOrWhiteSpace(model.Keyword))
+            {
+                return Error("The Keyword is required.");
+            }
+
+            if (model.Attack < 0)
+            {
+                return Error("Attack must be positive number.");
+            }
+
+            if (model.Health < 0)
+            {
+                return Error("Health must be positive number.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Description)
+                || model.Description.Length > 200)
+            {
+                return Error("Description must be between 1 and 200 characters.");
+            }
+
+            var cardId = cardService.AddCard(model);
+
+            var userId = GetUserId();
+            cardService.AddCardToCollection(cardId, userId);
+           
             return Redirect("/Cards/All");
         }
 
@@ -64,16 +90,7 @@ namespace BattleCards.Controllers
 
             //var db = new ApplicationDbContext(); The dependency inversion principle is not observed! All we need, must be filled in the constructor!
 
-            var cardsViewModel = db.Cards
-                .Select(db => new CardViewModel
-                {
-                    Name = db.Name,
-                    Attack = db.Attack,
-                    Health = db.Health,
-                    ImageUrl = db.ImageUrl,
-                    Type = db.Keyword,
-                    Description = db.Description
-                }).ToList();
+            var cardsViewModel = cardService.GetAll();
 
             return View(cardsViewModel);
         }
@@ -85,7 +102,34 @@ namespace BattleCards.Controllers
                 return Redirect("/Users/Login");
             }
 
-            return View();
+            var userId = GetUserId();
+            var cards = cardService.GetByUserId(userId);
+
+            return View(cards);
+        }
+
+        public HttpResponse RemoveFromCollection(int cardId)
+        {
+            if (!IsUserSignedIn())
+            {
+                return Redirect("/Users/Login");
+            }
+
+            cardService.RemoveFromCollection(cardId, GetUserId());
+
+            return Redirect("/Cards/Collection");
+        }
+
+        public HttpResponse AddToCollection(int cardId)
+        {
+            if (!IsUserSignedIn())
+            {
+                return Redirect("/Users/Login");
+            }
+
+            cardService.AddCardToCollection(cardId, GetUserId());
+            
+            return Redirect("/Cards/Collection");
         }
     }
 }
