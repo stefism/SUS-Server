@@ -14,6 +14,7 @@ namespace SUS.HTTP
             Headers = new List<Header>();
             Cookies = new List<Cookie>();
             FormData = new Dictionary<string, string>();
+            QueryData = new Dictionary<string, string>();
 
             string[] lines = requestString.Split(new string[] { HttpConstants.NewLine }, StringSplitOptions.None);
 
@@ -84,8 +85,26 @@ namespace SUS.HTTP
                 Session = Sessions[sessionCookie.Value];
             }
 
+            if (Path.Contains("?"))
+            {
+                var pathParts = Path.Split(new char[] { '?' }, 2);
+                Path = pathParts[0];
+                QueryString = pathParts[1];
+            }
+            else
+            {
+                QueryString = string.Empty;
+            }
+
             Body = bodyBuilder.ToString().TrimEnd('\n', '\r');
-            var parameters = Body.Split(new char[] { '&' }, StringSplitOptions.RemoveEmptyEntries);
+
+            SplitParameters(Body, FormData);
+            SplitParameters(QueryString, QueryData);
+        }
+
+        private static void SplitParameters(string parametersAsString, IDictionary<string, string> output)
+        {
+            var parameters = parametersAsString.Split(new char[] { '&' }, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var parameter in parameters)
             {
@@ -93,14 +112,16 @@ namespace SUS.HTTP
                 var name = parameterParts[0];
                 var value = WebUtility.UrlDecode(parameterParts[1]);
 
-                if (!FormData.ContainsKey(name))
+                if (!output.ContainsKey(name))
                 {
-                    FormData.Add(name, value);
+                    output.Add(name, value);
                 }
             }
         }
 
         public string Path { get; set; }
+
+        public string QueryString { get; set; }
 
         public HttpMethod Method { get; set; }
 
@@ -109,6 +130,8 @@ namespace SUS.HTTP
         public ICollection<Cookie> Cookies { get; set; }
 
         public IDictionary<string, string> FormData { get; set; }
+        
+        public IDictionary<string, string> QueryData { get; set; }
 
         public Dictionary<string, string> Session { get; set; }
 

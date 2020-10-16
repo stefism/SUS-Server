@@ -26,7 +26,7 @@ namespace BattleCards.Controllers
         }
 
         [HttpPost("/Cards/Add")]
-        public HttpResponse DoAdd()
+        public HttpResponse DoAdd(AddCardInputModel model)
         {
             if (!IsUserSignedIn())
             {
@@ -42,12 +42,12 @@ namespace BattleCards.Controllers
 
             db.Cards.Add(new Card
             {
-                Attack = int.Parse(Request.FormData["attack"]),
-                Health = int.Parse(Request.FormData["health"]),
-                Description = Request.FormData["description"],
-                Name = Request.FormData["name"],
-                ImageUrl = Request.FormData["image"],
-                Keyword = Request.FormData["keyword"],
+                Attack = model.Attack,
+                Health = model.Health,
+                Description = model.Description,
+                Name = model.Name,
+                ImageUrl = model.Image,
+                Keyword = model.Keyword,
             });
 
             db.SaveChanges();

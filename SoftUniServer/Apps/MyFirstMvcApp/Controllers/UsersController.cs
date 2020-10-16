@@ -26,15 +26,13 @@ namespace BattleCards.Controllers
         }
 
         [HttpPost("/Users/Login")]
-        public HttpResponse DoLogin()
+        public HttpResponse DoLogin(string username, string password)
         {
             if (IsUserSignedIn())
             {
                 return Redirect("/");
             }
-
-            var username = Request.FormData["username"];
-            var password = Request.FormData["password"];
+           
             var userId = userService.GetUserId(username, password);
             
             if (userId == null)
@@ -57,17 +55,12 @@ namespace BattleCards.Controllers
         }
 
         [HttpPost("/Users/Register")]
-        public HttpResponse DoRegister()
+        public HttpResponse DoRegister(string username, string email, string password, string confirmPassword)
         {
             if (IsUserSignedIn())
             {
                 return Redirect("/");
-            }
-
-            var username = Request.FormData["username"];
-            var email = Request.FormData["email"];
-            var password = Request.FormData["password"];
-            var confirmPassword = Request.FormData["confirmPassword"];
+            }            
 
             if (string.IsNullOrEmpty(username) || username.Length < 5
                             || username.Length > 20)
