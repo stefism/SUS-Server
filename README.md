@@ -1,3 +1,4 @@
 This project is implementation of custom HTTP Server with custom MVC Framework Engine. 
-For custom MVC framework custom engine I have applied code driven development (test first) and I create some tests with xUnit.
-The project is not finished yet and I am currently working on it. The idea is in its final version to approach the Razor View Engine in ASP.NET MVC. For this purpose I use Reflection and Microsoft.CodeAnalysis (Roslyn).
+For custom MVC framework custom engine I have applied code driven development (test first) and I create some tests with xUnit. 
+The idea is to get as close as possible to the Razor View Engine in ASP.NET MVC. For this purpose I use Reflection and Microsoft.CodeAnalysis (Roslyn).
+For test the functionality I make the very simple application - Battle Cards, which allows the user to enter a card with certain parameters (attack, health) and add a link to an image from the Internet. The card is then saved in a SQL database and the user has the opportunity to create their own collection of cards after logging into the system. I also made the app support users and user roles.
